@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Edit {{ product.item }} — GreenCart Express{% endblock %}
+{% block content %}
+<div class="mb-8 flex items-end justify-between">
+  <div><p class="text-sm font-extrabold uppercase tracking-[.15em] text-leaf">Catalog editor</p><h1 class="mt-2 font-display text-4xl font-extrabold">Edit {{ product.item }}</h1><p class="mt-2 text-slate-500">Update content, category, media, pricing, stock, and status.</p></div>
+  <a class="secondary-button" href="{{ url_for('main.manage_inventory') }}">← Back to inventory</a>
+</div>
+<form method="post" enctype="multipart/form-data" class="edit-product-form grid w-full gap-7 lg:grid-cols-[320px_1fr]" data-category-form>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <aside class="panel h-fit p-6">
+    <div class="grid aspect-[4/3] place-items-center overflow-hidden rounded-2xl bg-emerald-50 font-display text-7xl font-extrabold text-emerald-200">
+      <img data-product-image-preview class="h-full w-full object-contain p-2 {% if not product.image_filename and not product.image_url %}hidden{% endif %}" {% if product.image_filename %}src="{{ url_for('static', filename='uploads/products/' ~ product.image_filename) }}"{% elif product.image_url %}src="{{ product.image_url }}"{% endif %} alt="{{ product.item }} preview">
+      <div data-product-image-fallback class="h-full w-full place-items-center {% if product.image_filename or product.image_url %}hidden{% else %}grid{% endif %}">{{ product.item[0] }}</div>
+    </div>
+    <div class="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800"><strong>Live preview</strong><p class="mt-1 text-xs leading-5 text-emerald-700">New uploads appear here immediately. Product images are automatically fitted inside a consistent 4:3 frame without cropping.</p></div>
+  </aside>
+  <section class="panel p-6 sm:p-8">
+    <div class="grid gap-5 sm:grid-cols-2">
+      <div class="sm:col-span-2"><label class="field-label">Product name</label><input class="field" name="item" maxlength="100" value="{{ product.item }}" required></div>
+      <div class="sm:col-span-2"><label class="field-label">Category type</label><div class="category-type-toggle grid grid-cols-2 rounded-xl bg-slate-100 p-1"><label class="cursor-pointer"><input class="peer sr-only" type="radio" name="category_mode" value="existing" checked><span class="rounded-lg px-3 py-2 text-center text-sm font-bold">Existing</span></label><label class="cursor-pointer"><input class="peer sr-only" type="radio" name="category_mode" value="new"><span class="rounded-lg px-3 py-2 text-center text-sm font-bold">New category</span></label></div></div>
+      <div data-existing-category><label class="field-label">Existing category</label><select class="field" name="category" required>{% for category in categories %}<option value="{{ category }}" {% if category == product.category %}selected{% endif %}>{{ category }}</option>{% endfor %}</select></div>
+      <div class="hidden" data-new-category><label class="field-label">New category name</label><input class="field" name="new_category" maxlength="80" placeholder="e.g. Home & Kitchen"></div>
+      <div class="sm:col-span-2"><label class="field-label">Description</label><textarea class="field min-h-28" name="description" maxlength="300">{{ product.description or '' }}</textarea></div>
+      <div><label class="field-label">Price (USD)</label><input class="field" name="price" type="number" min="0.01" step="0.01" value="{{ '%.2f'|format(product.price_cents / 100) }}" required></div>
+      <div class="grid grid-cols-2 gap-3"><div><label class="field-label">Stock</label><input class="field" name="quantity" type="number" min="0" value="{{ product.quantity }}" required></div><div><label class="field-label">Low stock alert</label><input class="field" name="threshold" type="number" min="0" value="{{ product.low_stock_threshold }}" required></div></div>
+      <div><label class="field-label">Replace image</label><input class="field" type="file" name="image" accept="image/png,image/jpeg,image/webp,image/gif"><p class="mt-2 text-xs text-slate-400">Automatically resized to 1200 × 900 pixels.</p></div>
+      <div><label class="field-label">Image URL</label><input class="field" type="url" name="image_url" maxlength="500" value="{{ product.image_url or '' }}"></div>
+      {% if product.image_filename or product.image_url %}<label class="image-remove-control sm:col-span-2"><input type="checkbox" name="remove_product_image" value="1"><span><strong>Remove current image</strong><small>The product will use its letter placeholder after you save.</small></span></label>{% endif %}
+      <label class="flex items-center gap-3 text-sm font-bold sm:col-span-2"><input type="checkbox" name="is_active" value="1" {% if product.is_active %}checked{% endif %} class="h-4 w-4 rounded border-slate-300 text-leaf focus:ring-leaf">Product is activated and visible in the shop</label>
+      <button class="primary-button sm:col-span-2 sm:justify-self-start">Save all changes</button>
+    </div>
+  </section>
+</form>
+{% endblock %}

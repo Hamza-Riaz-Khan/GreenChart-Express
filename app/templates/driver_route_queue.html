@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "macros.html" import status_badge %}
+{% block title %}Route queue — {{ configured_store_name }}{% endblock %}
+{% block content %}
+<main class="page-shell">
+    <div class="page-heading"><span class="eyebrow">Optimized worklist</span><h1>Route queue</h1><p>Active deliveries arranged in a recommended nearest-next sequence.</p></div>
+    <div class="route-queue">
+        {% for entry in route_queue %}
+        <article class="surface-card route-stop-card"><div class="route-stop-number">{{ loop.index }}</div><div class="route-stop-copy"><div class="split-heading"><div><span class="eyebrow">{{ entry.order.order_number }}</span><h2>{{ entry.order.delivery_name }}</h2></div>{{ status_badge(entry.order.status) }}</div><p>{{ entry.order.delivery_address }}</p><div class="inline-meta"><span>{{ '%.1f'|format(entry.distance_km) }} km from previous stop</span><span>{{ entry.order.items|length }} item line{{ '' if entry.order.items|length == 1 else 's' }}</span><span>Driver fee {{ entry.order.estimated_driver_fee_cents|money }}</span></div><a class="button button-primary" href="{{ url_for('main.driver_delivery_detail', order_id=entry.order.id) }}">Open delivery</a></div></article>
+        {% else %}<section class="empty-state surface-card"><h2>No active deliveries</h2><p>New assignments will appear here automatically.</p></section>{% endfor %}
+    </div>
+</main>
+{% endblock %}

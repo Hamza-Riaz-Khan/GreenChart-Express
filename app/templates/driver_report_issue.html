@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Report a problem — {{ configured_store_name }}{% endblock %}
+{% block content %}
+<main class="page-shell narrow-page">
+    <div class="page-heading"><span class="eyebrow">Driver support</span><h1>Report a delivery problem</h1><p>Flag an operational issue so the dispatch team can respond.</p></div>
+    <form method="post" class="surface-card compact-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="order_id">Delivery</label><select id="order_id" name="order_id" required><option value="">Choose an active delivery</option>{% for order in orders %}<option value="{{ order.id }}" {% if selected_order_id == order.id %}selected{% endif %}>{{ order.order_number }} — {{ order.recipient_name }}</option>{% endfor %}</select><label for="issue_type">Problem type</label><select id="issue_type" name="issue_type" required><option>Unreachable customer</option><option>Incorrect address</option><option>Damaged item</option><option>Vehicle issue</option><option>Other</option></select><label for="details">Details</label><textarea id="details" name="details" rows="6" maxlength="2000" required></textarea><button class="button button-primary" type="submit">Send report</button></form>
+    <section class="content-section"><div class="section-heading"><h2>Recent reports</h2></div>{% for issue in issues %}<article class="surface-card ticket-card"><div class="split-heading"><div><span class="eyebrow">{{ issue.order.order_number }}</span><h3>{{ issue.issue_type }}</h3></div><span class="status-badge">{{ issue.status }}</span></div><p>{{ issue.details }}</p><time>{{ issue.created_at.strftime('%d %b %Y, %I:%M %p') }}</time></article>{% else %}<div class="empty-state surface-card"><p>No problems reported.</p></div>{% endfor %}</section>
+</main>
+{% endblock %}

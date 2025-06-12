@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "macros.html" import status_badge %}
+{% block title %}Support centre — {{ configured_store_name }}{% endblock %}
+{% block content %}
+<main class="page-shell">
+    <div class="page-heading"><span class="eyebrow">Help when you need it</span><h1>Support centre</h1><p>Create a ticket for an order, payment, delivery, or account issue.</p></div>
+    <div class="detail-layout">
+        <form method="post" class="surface-card compact-form detail-main-card">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <h2>Create a support ticket</h2>
+            <label for="category">Issue type</label><select id="category" name="category" required><option>Order</option><option>Payment</option><option>Delivery</option><option>Account</option><option>Other</option></select>
+            <label for="order_id">Related order (optional)</label><select id="order_id" name="order_id"><option value="">No related order</option>{% for order in orders %}<option value="{{ order.id }}">{{ order.order_number }}</option>{% endfor %}</select>
+            <label for="subject">Subject</label><input id="subject" name="subject" maxlength="140" required>
+            <label for="message">How can we help?</label><textarea id="message" name="message" rows="6" maxlength="3000" required></textarea>
+            <button class="button button-primary" type="submit">Submit ticket</button>
+        </form>
+        <aside class="surface-card detail-sidebar-card"><h2>Response promise</h2><p>Demo support tickets are visible to administrators immediately. Replies will appear below and in your notifications.</p></aside>
+    </div>
+    <section class="content-section"><div class="section-heading"><h2>Your tickets</h2></div><div class="ticket-list">
+        {% for ticket in tickets %}<article class="surface-card ticket-card"><div class="ticket-heading"><div><span class="eyebrow">{{ ticket.category }} · #{{ ticket.id }}</span><h3>{{ ticket.subject }}</h3></div>{{ status_badge(ticket.status) }}</div><p>{{ ticket.message }}</p>{% if ticket.admin_response %}<div class="support-response"><strong>Support response</strong><p>{{ ticket.admin_response }}</p></div>{% endif %}<time>Updated {{ ticket.updated_at.strftime('%d %b %Y, %I:%M %p') }}</time></article>
+        {% else %}<div class="empty-state surface-card"><p>You have not created any support tickets.</p></div>{% endfor %}
+    </div></section>
+</main>
+{% endblock %}

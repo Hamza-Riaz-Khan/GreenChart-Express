@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Sign in — GreenCart Express{% endblock %}
+{% block content %}
+<div class="mx-auto grid max-w-5xl overflow-hidden rounded-[2rem] bg-white shadow-soft lg:grid-cols-[.9fr_1.1fr]">
+  <div class="hidden bg-forest p-12 text-white lg:flex lg:flex-col lg:justify-between"><div><span class="inline-flex rounded-full bg-lime px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-forest">Welcome back</span><h1 class="mt-8 font-display text-4xl font-extrabold leading-tight">Fresh groceries are only a few clicks away.</h1><p class="mt-5 leading-7 text-emerald-100/70">Sign in to shop, manage operations, or continue today’s delivery route.</p></div><p class="text-sm text-emerald-100/60">Secure role-based access · Protected forms</p></div>
+  <div class="p-7 sm:p-12"><p class="text-sm font-extrabold uppercase tracking-[.15em] text-leaf">Account access</p><h2 class="mt-2 font-display text-3xl font-extrabold">Sign in</h2><p class="mt-2 text-slate-500">Enter your details to continue.</p>
+    <form method="post" class="mt-8 space-y-5"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><div><label class="field-label" for="username">Username</label><input class="field" id="username" name="username" autocomplete="username" required autofocus></div><div><label class="field-label" for="password">Password</label><input class="field" id="password" name="password" type="password" autocomplete="current-password" required></div><label class="flex items-center gap-3 text-sm font-semibold text-slate-600"><input type="checkbox" name="remember" class="h-4 w-4 rounded border-slate-300 text-leaf focus:ring-leaf">Keep me signed in</label><button class="primary-button w-full py-3.5">Sign in securely</button></form>
+    <p class="mt-7 text-center text-sm text-slate-500">New to GreenCart? <a class="font-bold text-leaf hover:underline" href="{{ url_for('main.signup') }}">Create a customer account</a></p>
+  </div>
+</div>
+{% endblock %}

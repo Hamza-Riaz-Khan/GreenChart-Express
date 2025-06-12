@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Rewards & offers — {{ configured_store_name }}{% endblock %}
+{% block content %}
+<main class="page-shell">
+  <div class="page-heading"><span class="eyebrow">Loyalty programme</span><h1>Rewards & offers</h1><p>Earn one point for every virtual dollar spent and redeem points during checkout.</p></div>
+  <section class="reward-hero surface-card"><div><span class="eyebrow">Your balance</span><strong>{{ current_user.reward_points }}</strong><p>reward points</p></div><div><h2>How rewards work</h2><p>At checkout, points can cover up to 20% of the merchandise total. Coupons and points can be combined, and cancelled orders restore redeemed points.</p><a class="button button-primary" href="{{ url_for('main.shop') }}">Shop and earn</a></div></section>
+  <section class="reward-guide"><article class="surface-card"><span class="reward-guide-number">1</span><h2>Receive offers</h2><p>Administrators publish promotional coupons. You will receive a notification when a new coupon becomes available.</p></article><article class="surface-card"><span class="reward-guide-number">2</span><h2>Check the requirement</h2><p>Every coupon below shows its minimum spend and expiry date. A code can normally be used once per customer.</p></article><article class="surface-card"><span class="reward-guide-number">3</span><h2>Apply at checkout</h2><p>Enter the code and press Apply before paying. Your exact discount and total savings will appear immediately.</p></article></section>
+  <section class="content-section"><div class="section-heading"><div><span class="eyebrow">Available now</span><h2>Promotional offers</h2></div></div><div class="coupon-grid">
+  {% for coupon in coupons %}<article class="surface-card coupon-card {% if coupon.id in used_coupon_ids %}is-used{% endif %}"><span class="eyebrow">{{ 'Already used' if coupon.id in used_coupon_ids else 'Demo offer' }}</span><h3>{{ coupon.code }}</h3><strong>{% if coupon.discount_type == 'percent' %}{{ coupon.value }}% off{% else %}{{ coupon.value|money }} off{% endif %}</strong><p>{{ coupon.description or 'Apply this code during demo checkout.' }}</p><div><span>Minimum: {{ coupon.minimum_cents|money }}</span><span>{{ 'Expires ' ~ coupon.expires_at.strftime('%d %b %Y') if coupon.expires_at else 'No expiry' }}</span></div></article>
+  {% else %}<div class="empty-state surface-card full-span"><h2>No active offers right now</h2><p>New promotions will appear here and in your notifications.</p><a class="button button-primary" href="{{ url_for('main.shop') }}">Continue shopping</a></div>{% endfor %}
+  </div></section>
+</main>
+{% endblock %}

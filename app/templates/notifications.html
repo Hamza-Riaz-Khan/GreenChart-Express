@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Notifications — {{ configured_store_name }}{% endblock %}
+{% block content %}
+<main class="page-shell notification-page">
+    <div class="page-heading split-heading">
+        <div><span class="eyebrow">Activity centre</span><h1>Notifications</h1><p>Assignments, order updates, promotions, and account messages in one place.</p></div>
+        {% if notifications %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="read_all"><button class="button button-secondary" type="submit">Mark all as read</button></form>{% endif %}
+    </div>
+    <div class="notification-list">
+        {% for notification in notifications %}
+        <article class="surface-card notification-item {% if not notification.is_read %}is-unread{% endif %}">
+            <div class="notification-icon">{% if notification.kind == 'order' %}📦{% elif notification.kind == 'promotion' %}🏷️{% elif notification.kind == 'approval' %}✓{% else %}🔔{% endif %}</div>
+            <div><div class="notification-meta"><strong>{{ notification.title }}</strong><time>{{ notification.created_at.strftime('%d %b %Y, %I:%M %p') }}</time></div><p>{{ notification.message }}</p>{% if notification.link %}<a class="text-link" href="{{ notification.link }}">View details →</a>{% endif %}</div>
+            {% if not notification.is_read %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="read"><input type="hidden" name="notification_id" value="{{ notification.id }}"><button class="icon-button" type="submit" aria-label="Mark as read">✓</button></form>{% endif %}
+        </article>
+        {% else %}<section class="empty-state surface-card"><h2>You’re all caught up</h2><p>New updates will appear here.</p></section>{% endfor %}
+    </div>
+</main>
+{% endblock %}

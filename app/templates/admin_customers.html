@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Customers — {{ configured_store_name }}{% endblock %}
+{% block content %}
+<main class="page-shell">
+  <div class="page-heading"><span class="eyebrow">Account operations</span><h1>Customer management</h1><p>Review profiles, order activity, loyalty points, and virtual funds.</p></div>
+  <form method="get" class="filter-bar surface-card"><label class="search-field"><span>Search customers</span><input name="q" value="{{ search }}" placeholder="Name, username, or email"></label><button class="button button-primary">Search</button></form>
+  <div class="card-grid admin-people-grid">
+  {% for customer in customers %}<article class="surface-card person-card">
+    <div class="person-card-head"><div class="profile-avatar small">{% if customer.profile_image_filename %}<img src="{{ url_for('static', filename='uploads/profiles/' ~ customer.profile_image_filename) }}" alt="">{% else %}{{ (customer.name or customer.username)[:1]|upper }}{% endif %}</div><div><h2>{{ customer.name or customer.username }}</h2><p>@{{ customer.username }} · {{ customer.email or 'No email' }}</p></div><span class="status-badge {% if not customer.is_active %}status-cancelled{% endif %}">{{ 'Active' if customer.is_active else 'Suspended' }}</span></div>
+    <div class="person-metrics"><span><strong>{{ order_counts.get(customer.id, 0) }}</strong> orders</span><span><strong>{{ customer.wallet_balance_cents|currency }}</strong> balance</span><span><strong>{{ customer.reward_points }}</strong> points</span></div>
+    <div class="admin-card-actions"><a class="button button-primary" href="{{ url_for('main.admin_customer_detail', user_id=customer.id) }}">View profile & history</a><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="user_id" value="{{ customer.id }}"><input type="hidden" name="action" value="toggle"><button class="button button-secondary">{{ 'Suspend' if customer.is_active else 'Reactivate' }}</button></form><form method="post" class="inline-adjust-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="user_id" value="{{ customer.id }}"><input type="hidden" name="action" value="balance"><input type="number" name="amount" step="0.01" placeholder="± amount" required><button class="button button-secondary">Adjust funds</button></form></div>
+  </article>{% else %}<div class="empty-state surface-card"><p>No customers found.</p></div>{% endfor %}
+  </div>
+</main>
+{% endblock %}

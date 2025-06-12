@@ -1,0 +1,11 @@
+Flask
+Flask-Login
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-WTF
+Werkzeug
+python-dotenv
+requests
+Pillow
+gunicorn
+psycopg[binary]

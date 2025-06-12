@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ product.item }} — {{ configured_store_name }}{% endblock %}
+{% block content %}
+<main class="page-shell product-detail-page">
+    <a class="back-button" href="{{ url_for('main.shop') }}"><span aria-hidden="true">←</span> Back to shop</a>
+    <section class="product-detail-grid surface-card">
+        <div class="product-detail-media">
+            {% if product.image_filename %}
+                <img src="{{ url_for('static', filename='uploads/products/' ~ product.image_filename) }}" alt="{{ product.item }}">
+            {% elif product.image_url %}
+                <img src="{{ product.image_url }}" alt="{{ product.item }}">
+            {% else %}
+                <div class="product-placeholder">{{ product.item[:1]|upper }}</div>
+            {% endif %}
+        </div>
+        <div class="product-detail-copy">
+            <span class="eyebrow">{{ product.category }}</span>
+            <h1>{{ product.item }}</h1>
+            <div class="rating-summary"><strong>★ {{ '%.1f'|format(average_rating) }}</strong> <span>{{ reviews|length }} review{{ '' if reviews|length == 1 else 's' }}</span></div>
+            <p class="product-description">{{ product.description or 'A carefully selected product from GreenCart Express.' }}</p>
+            <p class="product-price">{{ product.price_cents|currency }}</p>
+            <p class="stock-copy">{% if product.quantity > 0 %}{{ product.quantity }} available{% else %}Out of stock{% endif %}</p>
+            {% if current_user.is_authenticated and current_user.role == 'customer' and product.is_active and product.quantity > 0 %}
+            <form method="post" action="{{ url_for('main.add_to_cart', item_id=product.id) }}" class="product-buy-form" data-add-cart>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="quantity">Quantity</label>
+                <div class="quantity-control" data-stepper>
+                    <button type="button" data-minus aria-label="Decrease quantity">−</button>
+                    <input id="quantity" name="quantity" type="number" value="1" min="1" max="{{ product.quantity }}">
+                    <button type="button" data-plus aria-label="Increase quantity">+</button>
+                </div>
+                <button class="button button-primary" type="submit">Add to cart</button>
+            </form>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="content-section">
+        <div class="section-heading"><div><span class="eyebrow">Customer feedback</span><h2>Reviews and ratings</h2></div></div>
+        {% if can_review %}
+        <form method="post" class="surface-card compact-form review-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="order_id">Delivered order</label>
+            <select id="order_id" name="order_id" required>{% for order in reviewable_orders %}<option value="{{ order.id }}">{{ order.order_number }} · {{ order.delivered_at.strftime('%d %b %Y') if order.delivered_at else 'Delivered' }}</option>{% endfor %}</select>
+            <label for="rating">Your rating</label>
+            <select id="rating" name="rating" required>
+                <option value="5">5 — Excellent</option><option value="4">4 — Very good</option>
+                <option value="3">3 — Good</option><option value="2">2 — Fair</option><option value="1">1 — Poor</option>
+            </select>
+            <label for="comment">Review</label>
+            <textarea id="comment" name="comment" maxlength="1000" rows="4" placeholder="Share your experience with this product"></textarea>
+            <button class="button button-primary" type="submit">Publish review</button>
+        </form>
+        {% elif current_user.is_authenticated and current_user.role == 'customer' and not existing_review %}
+            <p class="muted-copy">You can review this product after it has been delivered.</p>
+        {% endif %}
+        <div class="review-list">
+            {% for review in reviews %}
+            <article class="surface-card review-card">
+                <div><strong>{{ review.user.username }}</strong><span class="rating-stars">{{ '★' * review.rating }}{{ '☆' * (5-review.rating) }}</span></div>
+                <p>{{ review.comment or 'Rated this product.' }}</p>
+                <time>{{ review.created_at.strftime('%d %b %Y') }}</time>
+            </article>
+            {% else %}<div class="empty-state small"><p>No reviews yet. Be the first verified customer to review it.</p></div>{% endfor %}
+        </div>
+    </section>
+
+    {% if related %}
+    <section class="content-section"><div class="section-heading"><h2>You may also like</h2></div>
+        <div class="product-grid">
+        {% for item in related %}
+            <a class="surface-card related-product-card" href="{{ url_for('main.product_detail', item_id=item.id) }}">
+                {% if item.image_filename %}<img src="{{ url_for('static', filename='uploads/products/' ~ item.image_filename) }}" alt="{{ item.item }}">{% elif item.image_url %}<img src="{{ item.image_url }}" alt="{{ item.item }}">{% else %}<div class="product-placeholder">{{ item.item[:1] }}</div>{% endif %}
+                <span>{{ item.item }}</span><strong>{{ item.price_cents|currency }}</strong>
+            </a>
+        {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</main>
+{% endblock %}

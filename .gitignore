@@ -1,0 +1,45 @@
+# Secrets and machine-local configuration
+.env
+.env.*
+!.env.example
+.flaskenv
+
+# Python environments, caches, packaging, and test output
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.pytest-tmp/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Runtime databases, backups, logs, and test upload folders
+instance/*
+!instance/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+*.bak
+*.log
+
+# User-generated media (retain the empty directories)
+app/static/uploads/products/*
+!app/static/uploads/products/.gitkeep
+app/static/uploads/profiles/*
+!app/static/uploads/profiles/.gitkeep
+
+# Editor and operating-system metadata
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "macros.html" import status_badge %}
+{% block title %}{{ order.order_number }} — {{ configured_store_name }}{% endblock %}
+{% block content %}
+<main class="page-shell">
+  {% if current_user.role == 'admin' %}<a class="back-button" href="{{ url_for('main.admin_orders') }}"><span>←</span> Back to order management</a>{% elif current_user.role == 'driver' %}<a class="back-button" href="{{ url_for('main.driver_dashboard') }}"><span>←</span> Back to my deliveries</a>{% else %}<a class="back-button" href="{{ url_for('main.orders') }}"><span>←</span> Back to my orders</a>{% endif %}
+  <div class="page-heading split-heading"><div><span class="eyebrow">Order details</span><h1>{{ order.order_number }}</h1><p>Placed {{ order.created_at.strftime('%d %B %Y at %I:%M %p') }}</p></div>{{ status_badge(order.status) }}</div>
+  <div class="detail-layout">
+    <div class="detail-primary-column"><section class="surface-card detail-main-card"><h2>Items</h2>
+      {% for line in order.items %}<div class="order-line-detail">
+        {% if line.inventory and line.inventory.image_filename %}<img src="{{ url_for('static', filename='uploads/products/' ~ line.inventory.image_filename) }}" alt="{{ line.item_name }}">{% elif line.inventory and line.inventory.image_url %}<img src="{{ line.inventory.image_url }}" alt="{{ line.item_name }}">{% else %}<div class="mini-placeholder">{{ line.item_name[:1] }}</div>{% endif %}
+        <div>{% if line.inventory and current_user.role == 'customer' %}<a href="{{ url_for('main.product_detail', item_id=line.inventory.id) }}"><strong>{{ line.item_name }}</strong></a>{% else %}<strong>{{ line.item_name }}</strong>{% endif %}<span>{{ line.quantity }} × {{ line.unit_price_cents|currency }}</span></div><strong>{{ line.line_total_cents|currency }}</strong>
+      </div>{% endfor %}
+      <div class="total-breakdown"><span>Subtotal <strong>{{ order.subtotal_cents|currency }}</strong></span><span>Delivery <strong>{{ order.delivery_fee_cents|currency }}</strong></span>{% if order.discount_cents %}<span>Discount <strong>−{{ order.discount_cents|currency }}</strong></span>{% endif %}<span class="grand-total">Total <strong>{{ order.amount_cents|currency }}</strong></span></div>
+      <div class="button-row"><a class="button button-secondary" href="{{ url_for('main.invoice', order_id=order.id) }}">View invoice</a>{% if current_user.role in ['customer','admin'] and order.status in ['Assigned','In Transit','Delivered'] %}<a class="button button-primary" href="{{ url_for('main.track_order', order_id=order.id) }}">Track delivery</a>{% endif %}</div>
+    </section>
+    <section class="content-section order-timeline-section"><div class="section-heading"><div><span class="eyebrow">Order progress</span><h2>Order timeline</h2></div></div><ol class="timeline-list surface-card">{% for event in events %}<li><span></span><div><strong>{{ event.status }}</strong><p>{{ event.note }}</p><time>{{ event.created_at.strftime('%d %b %Y, %I:%M %p') }}</time></div></li>{% else %}<li><span></span><div><strong>{{ order.status }}</strong><p>Your order is being processed.</p></div></li>{% endfor %}</ol></section></div>
+    <aside class="detail-sidebar">
+      <section class="surface-card"><h2>Delivery</h2><dl class="detail-list"><div><dt>Recipient</dt><dd>{{ order.delivery_name }}</dd></div><div><dt>Phone</dt><dd>{{ order.delivery_phone }}</dd></div><div><dt>Address</dt><dd>{{ order.delivery_address }}</dd></div><div><dt>Driver</dt><dd>{{ order.driver.user.username if order.driver else 'Awaiting assignment' }}</dd></div>{% if order.driver %}<div><dt>Assignment</dt><dd>{{ order.assignment_method_label }}</dd></div>{% endif %}</dl></section>
+      <section class="surface-card"><h2>Payment</h2><dl class="detail-list"><div><dt>Method</dt><dd>{{ order.payment_method_label }}</dd></div><div><dt>Status</dt><dd><span class="payment-status-label">{{ order.payment_status_label }}</span></dd></div>{% if order.coupon_code %}<div><dt>Coupon</dt><dd>{{ order.coupon_code }}</dd></div>{% endif %}<div><dt>Rewards earned</dt><dd>{{ order.reward_points_earned }} points</dd></div></dl></section>
+    </aside>
+  </div>
+</main>
+{% endblock %}

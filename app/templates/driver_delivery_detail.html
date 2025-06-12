@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "macros.html" import status_badge %}
+{% block title %}Delivery {{ order.order_number }} — {{ configured_store_name }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">{% endblock %}
+{% block content %}
+<main class="page-shell">
+  <a class="back-button" href="{{ url_for('main.driver_dashboard') }}"><span>←</span> Back to my deliveries</a>
+  <div class="page-heading split-heading"><div><span class="eyebrow">Delivery details</span><h1>{{ order.order_number }}</h1><p>{{ order.delivery_name }} · {{ order.delivery_address }}</p></div>{{ status_badge(order.status) }}</div>
+  <div class="detail-layout">
+    <section class="surface-card detail-main-card">
+      <div id="delivery-detail-map" class="tracking-map" data-route-map data-start-lat="{{ order.driver.current_lat if order.driver and order.driver.current_lat is not none else '' }}" data-start-lng="{{ order.driver.current_lng if order.driver and order.driver.current_lng is not none else '' }}" data-end-lat="{{ order.delivery_lat if order.delivery_lat is not none else '' }}" data-end-lng="{{ order.delivery_lng if order.delivery_lng is not none else '' }}"><div class="map-loading-state">Loading delivery route…</div></div>
+      <div class="delivery-metrics"><div><span>Estimated route</span><strong>{{ '%.1f'|format(distance_km) }} km</strong></div><div><span>Estimated time</span><strong>{{ eta_minutes }} min</strong></div><div><span>Driver fee</span><strong>{{ (order.driver_earning.amount_cents if order.driver_earning else order.estimated_driver_fee_cents)|money }}</strong></div></div>
+      <form method="post" action="{{ url_for('main.update_order_status', order_id=order.id) }}" class="button-row"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% if order.status == 'Assigned' %}<button class="button button-primary" name="status" value="In Transit">Start delivery</button>{% elif order.status == 'In Transit' %}<button class="button button-primary" name="status" value="Delivered">Mark delivered</button>{% endif %}<a class="button button-secondary" href="{{ url_for('main.driver_report_issue', order_id=order.id) }}">Report a problem</a></form>
+    </section>
+    <aside class="detail-sidebar"><section class="surface-card"><h2>Customer</h2><dl class="detail-list"><div><dt>Name</dt><dd>{{ order.delivery_name }}</dd></div><div><dt>Phone</dt><dd>{{ order.delivery_phone }}</dd></div><div><dt>Address</dt><dd>{{ order.delivery_address }}</dd></div></dl></section><section class="surface-card"><h2>Package</h2>{% for line in order.items %}<div class="mini-order-line"><span>{{ line.item_name }} × {{ line.quantity }}</span><strong>{{ line.line_total_cents|currency }}</strong></div>{% endfor %}</section></aside>
+  </div>
+</main>
+{% endblock %}
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>window.addEventListener('load',()=>{const el=document.querySelector('[data-route-map]');if(!el)return;if(typeof L==='undefined'){el.innerHTML='<div class="map-loading-state">The map service could not load. Check your connection and refresh.</div>';return;}const a=[parseFloat(el.dataset.startLat),parseFloat(el.dataset.startLng)],b=[parseFloat(el.dataset.endLat),parseFloat(el.dataset.endLng)];if(a.some(Number.isNaN)||b.some(Number.isNaN)){el.innerHTML='<div class="map-loading-state">Share your location to display the delivery route.</div>';return;}let route=[];try{route=JSON.parse({{ display_route|tojson }});}catch{}const path=Array.isArray(route)&&route.length>1?route:[a,b];el.innerHTML='';const map=L.map(el,{scrollWheelZoom:false}).fitBounds(path,{padding:[40,40]});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);L.marker(a).addTo(map).bindPopup('Your current location');L.marker(b).addTo(map).bindPopup('Delivery destination');L.polyline(path,{color:'#12a66a',weight:5,opacity:.9}).addTo(map);setTimeout(()=>map.invalidateSize(),100);});</script>
+{% endblock %}

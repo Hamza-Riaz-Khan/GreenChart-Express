@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% block title %}Settings — GreenCart Express{% endblock %}
+{% block content %}
+<div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <p class="text-sm font-extrabold uppercase tracking-[.15em] text-leaf">Account centre</p>
+    <h1 class="mt-2 font-display text-4xl font-extrabold">Security & settings</h1>
+    <p class="mt-2 text-slate-500">Manage your password{% if current_user.role == 'customer' %}, demonstration wallet, and account activity{% endif %}.</p>
+  </div>
+  <a class="secondary-button" href="{{ url_for('main.profile') }}">View profile</a>
+</div>
+
+<div class="grid gap-7 xl:grid-cols-[1fr_400px]">
+  <section class="panel h-fit p-6 sm:p-8">
+    <h2 class="font-display text-xl font-extrabold">Password & security</h2>
+    <p class="mt-1 text-sm text-slate-500">Use at least eight characters for your new password.</p>
+    <form method="post" class="mt-6 grid gap-5 sm:grid-cols-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="password">
+      <div><label class="field-label">Current password</label><input class="field" type="password" name="current_password" autocomplete="current-password" required></div>
+      <div><label class="field-label">New password</label><input class="field" type="password" name="new_password" minlength="8" autocomplete="new-password" required></div>
+      <button class="primary-button sm:col-span-2 sm:justify-self-start">Change password</button>
+    </form>
+  </section>
+
+  <aside class="space-y-7">
+    {% if current_user.role == 'customer' %}
+    <section class="overflow-hidden rounded-[1.25rem] bg-forest p-6 text-white shadow-soft">
+      <p class="text-xs font-extrabold uppercase tracking-[.15em] text-emerald-200">Virtual balance</p>
+      <p class="mt-3 font-display text-4xl font-extrabold text-lime">{{ current_user.wallet_balance_cents|money }}</p>
+      <p class="mt-2 text-sm leading-6 text-emerald-100/70">Use this balance for every demonstration checkout. No real money is charged.</p>
+      <button type="button" class="mt-5 inline-flex w-full items-center justify-between rounded-xl bg-lime px-4 py-3 font-extrabold text-forest transition hover:bg-white" data-open-topup>
+        <span>Add virtual funds</span><span aria-hidden="true">→</span>
+      </button>
+    </section>
+    {% endif %}
+
+    <section class="panel p-6">
+      <h2 class="font-display text-xl font-extrabold">Recent activity</h2>
+      <div class="mt-5 space-y-4">
+        {% for tx in transactions %}
+        <div class="flex items-center gap-3">
+          <span class="grid h-9 w-9 place-items-center rounded-full text-lg font-bold {% if tx.transaction_type == 'charge' %}bg-rose-50 text-rose-600{% else %}bg-emerald-50 text-emerald-600{% endif %}">{{ '−' if tx.transaction_type == 'charge' else '+' }}</span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-bold">{{ tx.transaction_type|title }} · {{ tx.method_label }}</p>
+            <p class="text-xs text-slate-400">{{ tx.created_at.strftime('%d %b, %H:%M') }}</p>
+          </div>
+          <p class="text-sm font-extrabold {% if tx.transaction_type == 'charge' %}text-rose-600{% else %}text-emerald-600{% endif %}">{{ '−' if tx.transaction_type == 'charge' else '+' }}{{ tx.amount_cents|money }}</p>
+        </div>
+        {% else %}<p class="text-sm text-slate-500">No virtual wallet activity yet.</p>{% endfor %}
+      </div>
+    </section>
+  </aside>
+</div>
+
+{% if current_user.role == 'customer' %}
+<dialog id="topup-dialog" class="topup-dialog" data-auto-open="{{ 'true' if request.args.get('topup') == '1' else 'false' }}">
+  <form method="post" data-topup-form>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="topup">
+    <div class="topup-dialog-head">
+      <div><span class="eyebrow">Virtual wallet</span><h2>Add demo funds</h2><p>Choose a provider and simulate a secure top-up.</p></div>
+      <button type="button" class="topup-close" data-close-topup aria-label="Close">×</button>
+    </div>
+
+    <div class="topup-section">
+      <label class="field-label">1. Choose an amount</label>
+      <div class="topup-amount-grid">
+        {% for cents in [10000, 25000, 50000] %}
+        <label class="topup-choice"><input class="sr-only" type="radio" name="amount_cents" value="{{ cents }}" {% if loop.first %}checked{% endif %}><span>{{ cents|money }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="topup-section">
+      <label class="field-label">2. Select a payment method</label>
+      <div class="topup-provider-grid">
+        {% for value, label in payment_methods.items() %}
+        <label class="topup-choice topup-provider">
+          <input class="sr-only" type="radio" name="payment_method" value="{{ value }}" data-payment-label="{{ label }}" {% if loop.first %}checked{% endif %}>
+          <span><small>Demo provider</small><strong>{{ label }}</strong></span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="topup-section rounded-2xl bg-slate-50 p-5">
+      <label id="topup-detail-label" class="field-label" for="topup-payment-detail">Demo card number</label>
+      <input id="topup-payment-detail" class="field" name="payment_detail" required inputmode="numeric" autocomplete="off" maxlength="19" placeholder="4242 4242 4242 4242">
+      <p id="topup-payment-help" class="mt-2 text-xs leading-5 text-slate-500">Enter exactly 16 digits. Spaces are added automatically and the value is never stored.</p>
+    </div>
+
+    <label class="topup-consent">
+      <input type="checkbox" name="demo_consent" value="1" required>
+      <span><strong>I understand this is a demo transaction.</strong><small>No real provider is contacted and no payment details are saved.</small></span>
+    </label>
+    <button class="primary-button w-full py-3.5" type="submit" data-topup-submit disabled>Add funds to virtual balance</button>
+  </form>
+</dialog>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if current_user.role == 'customer' %}
+<script>
+(() => {
+  const dialog = document.querySelector('#topup-dialog');
+  const form = dialog?.querySelector('[data-topup-form]');
+  const detail = dialog?.querySelector('#topup-payment-detail');
+  const detailLabel = dialog?.querySelector('#topup-detail-label');
+  const detailHelp = dialog?.querySelector('#topup-payment-help');
+  const consent = dialog?.querySelector('[name="demo_consent"]');
+  const submit = dialog?.querySelector('[data-topup-submit]');
+  if (!dialog || !form || !detail) return;
+
+  const formatPhone = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 15);
+    if (digits.startsWith('03')) return digits.slice(0, 4) + (digits.length > 4 ? ' ' + digits.slice(4, 11) : '');
+    if (digits.startsWith('92')) return digits.slice(0, 2) + (digits.length > 2 ? ' ' + digits.slice(2, 5) : '') + (digits.length > 5 ? ' ' + digits.slice(5, 12) : '');
+    return digits.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
+  };
+  const selectedMethod = () => form.querySelector('[name="payment_method"]:checked');
+  const syncPayment = (clear = false) => {
+    const selected = selectedMethod();
+    if (!selected) return;
+    if (clear) detail.value = '';
+    if (selected.value === 'card') {
+      detailLabel.textContent = 'Demo card number';
+      detail.placeholder = '4242 4242 4242 4242';
+      detail.maxLength = 19;
+      detailHelp.textContent = 'Enter exactly 16 digits. Spaces are added automatically and the value is never stored.';
+    } else {
+      detailLabel.textContent = selected.dataset.paymentLabel + ' mobile number';
+      detail.placeholder = '0300 1234567';
+      detail.maxLength = 18;
+      detailHelp.textContent = 'Enter a 10–15 digit demo mobile number. Spaces are added automatically and the value is never stored.';
+    }
+  };
+  const syncConsent = () => {
+    submit.disabled = !consent.checked;
+    submit.classList.toggle('opacity-40', !consent.checked);
+    submit.classList.toggle('cursor-not-allowed', !consent.checked);
+  };
+
+  document.querySelector('[data-open-topup]')?.addEventListener('click', () => dialog.showModal());
+  dialog.querySelector('[data-close-topup]')?.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+  form.querySelectorAll('[name="payment_method"]').forEach((radio) => radio.addEventListener('change', () => syncPayment(true)));
+  detail.addEventListener('input', () => {
+    detail.value = selectedMethod()?.value === 'card'
+      ? detail.value.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
+      : formatPhone(detail.value);
+  });
+  consent.addEventListener('change', syncConsent);
+  syncPayment();
+  syncConsent();
+  if (dialog.dataset.autoOpen === 'true') dialog.showModal();
+})();
+</script>
+{% endif %}
+{% endblock %}

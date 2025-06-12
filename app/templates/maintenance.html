@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Temporarily unavailable — {{ configured_store_name }}{% endblock %}
+{% block content %}
+<section class="empty-state page-shell">
+    <span class="eyebrow">Scheduled maintenance</span>
+    <h1>We’ll be back shortly.</h1>
+    <p>{{ message }}</p>
+    <a class="button button-primary" href="{{ url_for('main.login') }}">Staff sign in</a>
+</section>
+{% endblock %}
